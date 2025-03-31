@@ -153,3 +153,6 @@ The output format is an array of JSON object (to support the ability to serve mu
     You should have received a copy of the GNU Affero General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ```
+
+# Fork Changes:
+1. Added /geo_finish_update endpoint that refreshes the MMDB files in memory on the fly.

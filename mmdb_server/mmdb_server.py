@@ -33,17 +33,24 @@ if pubsub:
     rdb = redis.Redis(host='127.0.0.1')
 
 mmdbs = []
-for mmdb_file in mmdb_files:
-    meta = {}
-    meta['reader'] = maxminddb.open_database(mmdb_file, maxminddb.MODE_MEMORY)
-    meta['description'] = meta['reader'].metadata().description
-    meta['build_db'] = time.strftime(
-        '%Y-%m-%d %H:%M:%S', time.localtime(meta['reader'].metadata().build_epoch)
-    )
-    meta['db_source'] = meta['reader'].metadata().database_type
-    meta['nb_nodes'] = meta['reader'].metadata().node_count
-    mmdbs.append(meta)
 
+def read_mmdbs():
+    global mmdbs
+    mmdbs = []
+    for mmdb_file in mmdb_files:
+        meta = {}
+        meta['reader'] = maxminddb.open_database(mmdb_file, maxminddb.MODE_MEMORY)
+        meta['description'] = meta['reader'].metadata().description
+        meta['build_db'] = time.strftime(
+            '%Y-%m-%d %H:%M:%S', time.localtime(meta['reader'].metadata().build_epoch)
+        )
+        meta['db_source'] = meta['reader'].metadata().database_type
+        meta['nb_nodes'] = meta['reader'].metadata().node_count
+        mmdbs.append(meta)
+    return None
+
+
+read_mmdbs()
 
 def validIPAddress(IP: str) -> bool:
     try:
@@ -115,10 +122,17 @@ class MyGeoLookup:
         return
 
 
+class Updater:
+    def on_post(self, req, resp):
+        read_mmdbs()
+        resp.media = {"result": "Updated"}
+        return
+
 app = falcon.App()
 
 app.add_route('/geolookup/{value}', GeoLookup())
 app.add_route('/', MyGeoLookup())
+app.add_route('/geo_finish_update', Updater())
 
 def main():
     with make_server('', port, app) as httpd:
